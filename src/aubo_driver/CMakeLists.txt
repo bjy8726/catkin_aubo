@@ -26,7 +26,8 @@ else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler. Suggested solution: update the pkg build-essential ")
 endif()
 
-include_directories(include include/otg ${catkin_INCLUDE_DIRS})
+include_directories(
+  include ${catkin_INCLUDE_DIRS}include include/otg ${catkin_INCLUDE_DIRS})
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         link_directories(${catkin_LIB_DIRS}  lib/lib64 lib/lib64/log4cplus lib/lib64/config lib/lib64/aubocontroller)
@@ -47,7 +48,8 @@ set(${PROJECT_NAME}_SOURCES3
 
 add_executable(aubo_driver ${${PROJECT_NAME}_SOURCES1})
 add_executable(testIO ${${PROJECT_NAME}_SOURCES2})
-add_executable(testAuboAPI ${${PROJECT_NAME}_SOURCES3})
+add_executable(testAuboAPI
+  ${${PROJECT_NAME}_SOURCES3})
 add_executable(aubo_gazebo_driver src/aubo_gazebo_driver.cpp)
 
 #LINK_LIBRARIES(${CMAKE_CURRENT_SOURCE_DIR}/lib)
@@ -70,5 +72,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
 add_dependencies(aubo_driver aubo_msgs_gencpp)
 add_dependencies(testIO aubo_msgs_gencpp)
 add_dependencies(testAuboAPI aubo_msgs_gencpp)
+
 
 

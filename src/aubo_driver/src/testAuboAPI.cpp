@@ -42,10 +42,10 @@
 
 using namespace aubo_driver;
 
-#define MAX_JOINT_ACC 100.0/180.0*M_PI  //unit rad/s^2
-#define MAX_JOINT_VEL 50.0/180.0*M_PI   //unit rad/s
-#define MAX_END_ACC    4                // unit m/s^2
-#define MAX_END_VEL    2                // unit m/s
+#define MAX_JOINT_ACC 50.0/180.0*M_PI  //unit rad/s^2
+#define MAX_JOINT_VEL 5.0/180.0*M_PI   //unit rad/s
+#define MAX_END_ACC    0.2                // unit m/s^2    4
+#define MAX_END_VEL    0.2                // unit m/s
 
 double zero_poeition[ARM_DOF] = {0};
 double initial_poeition[ARM_DOF] = {0.0/180.0*M_PI,  0.0/180.0*M_PI,  90.0/180.0*M_PI, 0.0/180.0*M_PI, 90.0/180.0*M_PI, 0.0/180.0*M_PI};
@@ -55,57 +55,6 @@ double postion2[ARM_DOF] = {15.0/180.0*M_PI,  0.0/180.0*M_PI,  90.0/180.0*M_PI, 
 double postion3[ARM_DOF] = {0.0/180.0*M_PI,  0.0/180.0*M_PI,  45.0/180.0*M_PI, 0.0/180.0*M_PI, 90.0/180.0*M_PI, 0.0/180.0*M_PI};
 double postion4[ARM_DOF] = {30.0/180.0*M_PI,  0.0/180.0*M_PI,  90.0/180.0*M_PI, 0.0/180.0*M_PI, 90.0/180.0*M_PI, 0.0/180.0*M_PI};
 
-void testMoveJ(AuboDriver &robot_driver)
-{
-    /** Initialize move properties ***/
-    robot_driver.robot_send_service_.robotServiceInitGlobalMoveProfile();
-
-    /** Set Max joint acc and vel***/
-    aubo_robot_namespace::JointVelcAccParam jointMaxAcc;
-    aubo_robot_namespace::JointVelcAccParam jointMaxVelc;
-    for(int i = 0; i < ARM_DOF; i++)
-    {
-        jointMaxAcc.jointPara[i] = MAX_JOINT_ACC;
-        jointMaxVelc.jointPara[i] = MAX_JOINT_VEL;
-    }
-    robot_driver.robot_send_service_.robotServiceSetGlobalMoveJointMaxAcc(jointMaxAcc);
-    robot_driver.robot_send_service_.robotServiceSetGlobalMoveJointMaxVelc(jointMaxVelc);
-
-    /** Robot move to zero position **/
-    int ret = robot_driver.robot_send_service_.robotServiceJointMove(zero_poeition, true);
-    if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
-        ROS_ERROR("Failed to move to zero postions, error code:%d", ret);
-
-
-    /** loop for 3 times **/
-    for(int i=0; i<3; i++)
-    {
-        /** set relative offset**/
-        aubo_robot_namespace::MoveRelative relativeMoveOnBase;
-        relativeMoveOnBase.ena = true;
-        relativeMoveOnBase.relativePosition[0] = 0;
-        relativeMoveOnBase.relativePosition[1] = 0;
-        relativeMoveOnBase.relativePosition[2] = 0.05*(i%4);   //unit:m
-        robot_driver.robot_send_service_.robotServiceSetMoveRelativeParam(relativeMoveOnBase);
-
-
-        /** switch to postion1 by moveJ **/
-        robot_driver.robot_send_service_.robotServiceJointMove(postion1, true);
-        if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
-        {
-            ROS_ERROR("Failed to move to zero postion, error code:%d", ret);
-            break;
-        }
-
-        /** switch to postion1 by moveJ **/
-        robot_driver.robot_send_service_.robotServiceJointMove(postion2, true);
-        if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
-        {
-            ROS_ERROR("Failed to move to  postion1, error code:%d", ret);
-            break;
-        }
-    }
-}
 
 void testMoveL(AuboDriver &robot_driver)
 {
@@ -131,7 +80,6 @@ void testMoveL(AuboDriver &robot_driver)
 
     /** Initialize move properties ***/
     robot_driver.robot_send_service_.robotServiceInitGlobalMoveProfile();
-
     /** Set Max END acc and vel**/
     robot_driver.robot_send_service_.robotServiceSetGlobalMoveEndMaxLineAcc(MAX_END_ACC);
     robot_driver.robot_send_service_.robotServiceSetGlobalMoveEndMaxAngleAcc(MAX_END_ACC);
@@ -150,6 +98,108 @@ void testMoveL(AuboDriver &robot_driver)
             ROS_ERROR("Failed to move to postion4, error code:%d", ret);
     }
 }
+
+
+
+
+
+void initJointAngleArray(double *array, double joint0, double joint1, double joint2, double joint3, double joint4, double joint5)
+{
+    array[0] = joint0;
+    array[1] = joint1;
+    array[2] = joint2;
+    array[3] = joint3;
+    array[4] = joint4;
+    array[5] = joint5;
+}
+
+
+
+void testTrackMove(AuboDriver &robot_driver)
+{
+    /** Initialize move properties ***/
+    robot_driver.robot_send_service_.robotServiceInitGlobalMoveProfile();
+
+    /** Set Max joint acc and vel***/
+    aubo_robot_namespace::JointVelcAccParam jointMaxAcc;
+    aubo_robot_namespace::JointVelcAccParam jointMaxVelc;
+    for(int i = 0; i < ARM_DOF; i++)
+    {
+        jointMaxAcc.jointPara[i] = MAX_JOINT_ACC;
+        jointMaxVelc.jointPara[i] = MAX_JOINT_VEL;
+    }
+    robot_driver.robot_send_service_.robotServiceSetGlobalMoveJointMaxAcc(jointMaxAcc);
+    robot_driver.robot_send_service_.robotServiceSetGlobalMoveJointMaxVelc(jointMaxVelc);
+
+
+
+    
+    //robot_driver.robot_send_service_.robotServiceSetGlobalBlendRadius(0.03);
+    robot_driver.robot_send_service_.robotServiceClearGlobalWayPointVector();
+
+    std::vector<aubo_robot_namespace::wayPoint_S> wayPointVector;
+    /** 先给定一系列位姿点,并生成位姿点容器wayPointVector **/
+    double startPointJointAngle[ARM_DOF] = {0};
+    initJointAngleArray(startPointJointAngle, 0.0/180.0*M_PI,  0.0/180.0*M_PI,  0.0/180.0*M_PI, 0.0/180.0*M_PI, 0.0/180.0*M_PI,0.0/180.0*M_PI);
+    int nums = 30;
+    for(int i=0; i<nums; i++)
+    {
+        aubo_robot_namespace::wayPoint_S wayPoint;
+        
+        
+        wayPoint.jointpos[0] = 0+i*0.02;
+        wayPoint.jointpos[1] = 0+i*0.02;
+        wayPoint.jointpos[2] = 0+i*0.02;
+        wayPoint.jointpos[3] = 0+i*0.02;
+        wayPoint.jointpos[4] = 0+i*0.02;
+        wayPoint.jointpos[5] = 0+i*0.02;
+        wayPointVector.push_back(wayPoint);
+        robot_driver.robot_send_service_.robotServiceAddGlobalWayPoint(wayPoint);
+        
+        /*
+        wayPoint.cartPos.position.x = 0.4+0.01*i;
+        wayPoint.cartPos.position.y = -0.06;
+        wayPoint.cartPos.position.z = 0.35;
+        wayPoint.orientation.w = 1;
+        wayPoint.orientation.x = 0;
+        wayPoint.orientation.y = 0;
+        wayPoint.orientation.z = 0; 
+        //求逆解，然后发出去,尝试以下不求逆解，将
+        int ret = robot_driver.robot_send_service_.robotServiceRobotIk(startPointJointAngle,
+                             wayPoint.cartPos.position,wayPoint.orientation,wayPoint);
+        if(ret == aubo_robot_namespace::InterfaceCallSuccCode)
+        {
+            wayPointVector.push_back(wayPoint);
+            robot_driver.robot_send_service_.robotServiceAddGlobalWayPoint(wayPoint);
+            std::cout<<":"<<wayPointVector.at(i).cartPos.position.x<<std::endl;
+        }
+        else
+        {
+            std::cerr<<"调用逆解函数失败"<<std::endl;
+        }*/
+    }
+    std::cout<<"points:"<<wayPointVector.size()<<std::endl;
+    std::cout<<":"<<wayPointVector.at(2).cartPos.position.x<<std::endl;
+    
+
+
+    /** 移动到机器人轨迹的初始点 **/
+
+    for(int i=0; i<nums; i++)
+{
+        int ret = robot_driver.robot_send_service_.robotServiceJointMove(wayPointVector[i].jointpos, true);
+        if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
+            ROS_ERROR("Failed to move to zero postions, error code:%d", ret);
+}
+        
+    /*
+    int ret3 = robot_driver.robot_send_service_.robotServiceTrackMove(aubo_robot_namespace::CARTESIAN_UBSPLINEINTP,true);
+    if(ret3 != aubo_robot_namespace::InterfaceCallSuccCode)
+        ROS_ERROR("error3 code:%d", ret3);*/
+
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -173,8 +223,7 @@ int main(int argc, char **argv)
                                              result); /*initialize*/
   if(ret)
   {
-    testMoveJ(robot_driver);
-    testMoveL(robot_driver);
+    testTrackMove(robot_driver);
   }
   else
       ROS_INFO("Failed to connect to the robot controller");

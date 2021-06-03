@@ -1,0 +1,6 @@
+<launch>
+  <rosparam command="load" file="$(find robot_scanning)/cfg/scanning.yaml"/>
+  <node name="main_node" pkg="robot_scanning" type="main_node" respawn="false" output="screen">
+  </node>
+
+</launch>
