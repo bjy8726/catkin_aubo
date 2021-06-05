@@ -1,3 +1,11 @@
 #设置一些特殊点的位置
 joints_angle:
    home_joints: [-0.001255,0.0,-1.406503,0.0,-1.571295,-0.002450]
+
+scaning_files:
+   text_cam: "/home/bianjingyang/catkin_realsense/src/io_files/pose_points_file.txt"
+   text_obj: "/home/bianjingyang/catkin_aubo/src/text_obj.txt"
+   text_base: "/home/bianjingyang/catkin_aubo/src/text_base.txt"
+
+scanning_motion:
+   points_num_per_time: 200

@@ -21,6 +21,7 @@ public:
     void gotoTargetByPose(double pose[]);
     void visualBlocking(std::string message);
     void runWayPoints(std::vector<geometry_msgs::Pose> &waypoints);
+    Eigen::Matrix4d getTransMatrix();
 
 
 private:
