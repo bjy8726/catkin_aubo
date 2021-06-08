@@ -13,12 +13,13 @@
 1. 首先启动
    roslaunch aubo_i5_moveit_config moveit_planning_execution.launch sim:=false robot_ip:=192.168.1.10
 
-2. 然后，启动驱动程序节点时，默认控制器为“ ros-controller”，如果要切换至“ robot-controller”
+2. 这一步不执行，如果使用moveit。启动驱动程序节点时，默认控制器为“ ros-controller”，如果要切换至“ robot-controller”
    rostopic pub -1 aubo_driver/controller_switch std_msgs/Int32 -- 0 
 
 3. 最后启动
-   rosrun aubo_driver testAuboAPI
-
+ roslaunch robot_scanning run_track_points_moveit.launch
+或者
+ rosrun aubo_driver testAuboAPI(执行时有些问题)
 
 ## 使用仿真机器人
 1. roslaunch aubo_i5_moveit_config moveit_planning_execution.launch robot_ip:=127.0.0.1  
@@ -49,6 +50,17 @@
             aubo_description/urdf/aubo_i5.urdf 
             aubo_i5.urdf.xacro   中<joint>标签中的<limit>选项
 
+3. 修改aubo_i5_moveit_config/config/joint_limits 中的关节最大速度，来限制轨迹点扫查的速度
+
+3. 获取机械臂末端坐标系与基坐标系的关系
+    3.1 ==使用仿真== ：调用函数move_group.getCurrentPose("wrist3_Link");
+    `aubo官方提供的ROS包配置中，该函数返回的位姿是相对于aubo机械臂支撑件的坐标系的(/world)`
+    `为了获得相对于机械臂基坐标系的位姿需要在z轴减去0.502,在Rviz中查看得到`
+
+    3.2 ==真实机械臂== ：调用函数move_group.getCurrentPose("wrist3_Link");
+    ` 是否需要减去-0.502 `
+    测试结果：也要减
+
 
 
 ## IP参数传入分析
@@ -68,6 +80,13 @@
 2. 由方向矢量变为四元数
 
 3. 对一组点进行坐标变换
+
+--------
+1. 测试现有的text_base:注意机械臂是否会与环境碰撞，确定仿真环境中的工作点对应的实际环境，并确定给的点是否是基于机械臂base的
+    A:目前不干扰，是基于base的
+2. 生成全部轨迹点文件，先仿真然后在去执行真实robot
+
+3. 规划多个点生成的路径执行时速度怎么控制
 
 
 
