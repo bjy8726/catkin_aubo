@@ -1,3 +1,6 @@
+#ifndef TRANS_MATRIX_H_
+#define TRANS_MATRIX_H_
+
 #include <Eigen/Dense>
 #include <fstream>
 #include <iostream>
@@ -17,3 +20,5 @@ public:
 private:
     /* data */
 };
+
+#endif

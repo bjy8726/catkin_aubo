@@ -92,9 +92,15 @@ void TransMatrix::newTrackPointsFileByTransMatrix(std::string &text_init,std::st
       Eigen::Matrix4d TrackPoints_init;
       Eigen::Matrix4d TrackPoints_target;
       Eigen::Vector3d T;
-      while(!inFile_init.eof())//是否到达文件末尾
+      while(getline(inFile_init,str_pose_init))//是否到达文件末尾
       {
-          getline(inFile_init,str_pose_init);
+          //getline(inFile_init,str_pose_init);   
+          if(str_pose_init == "NEXT")
+          {
+            outFile_target<<"NEXT"<<std::endl;
+            continue; 
+          }
+
           stringstream stream_pose(str_pose_init);
           //x y z
           stream_pose >> T[0];
@@ -107,7 +113,7 @@ void TransMatrix::newTrackPointsFileByTransMatrix(std::string &text_init,std::st
           stream_pose >> Q.w();
           TrackPoints_init = getTransMatrix(T,Q);    
           TrackPoints_target = T_target2init*TrackPoints_init;
-          //将工件坐标系下的位姿点写入文件text_obj
+          //将text_init坐标系下的位姿点写入文件text_target
           writeTrackPoints2File(TrackPoints_target,outFile_target);
       }
       inFile_init.close();

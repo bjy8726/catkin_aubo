@@ -70,20 +70,8 @@ void RunTrackPoints::gotoTargetByJoint(std::vector<double> &joints)
 }
 
 
-void RunTrackPoints::gotoTargetByPose(double pose[])
+void RunTrackPoints::gotoTargetByPose(geometry_msgs::Pose target_pose1)
 {
-  // Set the target pose , RPY mode (rotation around the reference axis X, Y, Z)
-  tf::Quaternion q;
-  q.setRPY(pose[3],pose[4],pose[5]);       //radian
-
-  geometry_msgs::Pose target_pose1;
-  target_pose1.position.x = pose[0];
-  target_pose1.position.y = pose[1];
-  target_pose1.position.z = pose[2];
-  target_pose1.orientation.x = q.x();
-  target_pose1.orientation.y = q.y();
-  target_pose1.orientation.z = q.z();
-  target_pose1.orientation.w = q.w();
 
   move_group->setPoseTarget(target_pose1);
 
@@ -120,7 +108,7 @@ void RunTrackPoints::runWayPoints(std::vector<geometry_msgs::Pose> &waypoints)
   moveit_msgs::RobotTrajectory trajectory;
   const double jump_threshold = 0.0;           //(The jump threshold is set to 0.0)
   //影响轨迹运动效果
-  const double eef_step = 0.001;                //(interpolation step)
+  const double eef_step = 0.01;                //(interpolation step)
 
   // Calculate Cartesian interpolation path: return path score (0~1, -1 stands for error)
   double fraction = move_group->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
@@ -148,12 +136,12 @@ Eigen::Matrix4d RunTrackPoints::getTransMatrix()
 {
   //计算base_link ==>  wrist3_Link(末端坐标系)的变换矩阵
   geometry_msgs::PoseStamped pose_end = move_group->getCurrentPose("wrist3_Link");
-
+/*
   std::cout<<"x:"<<pose_end.pose.position.x<<std::endl;
   std::cout<<"y:"<<pose_end.pose.position.y<<std::endl;
   std::cout<<"z:"<<pose_end.pose.position.z-0.502<<std::endl;
   std::cout<<"wx:"<<pose_end.pose.orientation.x<<std::endl;
-
+*/
   Eigen::Matrix4d trans_matrix;
   Eigen::Matrix3d qua_matrix;
   Eigen::Quaterniond Q;
@@ -185,5 +173,10 @@ Eigen::Matrix4d RunTrackPoints::getTransMatrix()
   trans_matrix(3,3) = 1;
 
   return trans_matrix;
+}
+
+void RunTrackPoints::stop()
+{
+  move_group->stop();
 }
 

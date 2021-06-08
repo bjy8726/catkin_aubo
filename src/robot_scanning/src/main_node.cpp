@@ -3,8 +3,18 @@
 #include <vector>
 #include "robot_scanning/run_track_points.h"
 #include "robot_scanning/trans_matrix.h"
+#include <signal.h>
 
 using namespace std;
+
+RunTrackPoints auboControl;
+
+void mySigHandle(int sig)
+{
+    ROS_INFO("STOP");
+    auboControl.stop();
+    ros::shutdown();
+}
 
 int main(int argc, char *argv[])
 {
@@ -30,17 +40,16 @@ int main(int argc, char *argv[])
   n.param<std::string>("/scaning_files/text_obj",text_obj,"/home/bianjingyang/test2.txt");
   n.param<std::string>("/scaning_files/text_base",text_base,"/home/bianjingyang/test3.txt");
   n.param("/scanning_motion/points_num_per_time",points_num_per_time,5);
+
   
-  //std::cout<<home_joints[0]<<std::endl;
   
   //0.创建机械臂的moveit接口，并运动到指定位置
-      RunTrackPoints auboControl;
+      signal(SIGINT,mySigHandle);
       auboControl.initMoveit();
-      auboControl.setMaxVelAndAccScalingFactor(0.03,0.1);
+      //auboControl.setMaxVelAndAccScalingFactor(1.0,1.0);
       auboControl.visualBlocking("Press 'next'1 in the RvizVisualToolsGui window to go to the pose");
       auboControl.gotoTargetByJoint(home_joints);
-      double pose[6] = {-0.3,-0.4,0.2,3.14,0,-1.57};
-      //auboControl.gotoTargetByPose(pose);
+
   
   //1.调用定位模块：确定相机坐标系与工件坐标系的关系(该模块封装成类)
       //1.1现在实验相机获取点云到执行轨迹这段时间，工件和相机不发生相对移动，可认为相机坐标系与工件坐标系重合
@@ -83,7 +92,7 @@ int main(int argc, char *argv[])
 
       T_base2obj = T_base2end*T_end2cam*T_cam2obj;
 
-      //trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_base,T_base2obj);
+      trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_base,T_base2obj);
       
       //5.2执行路径点
       auboControl.visualBlocking("Press 'next'2 in the RvizVisualToolsGui window to start scanning");          
@@ -94,11 +103,11 @@ int main(int argc, char *argv[])
           cout<<"open text_base failed!"<<endl;
           return -1;
       }
-      while(!inFile.eof())//是否到达文件末尾
-      {
-          std::vector<geometry_msgs::Pose> waypoints;
-          string str_pose_base;
-          for(int i=0; i<points_num_per_time && getline(inFile,str_pose_base); i++)
+      string str_pose_base;
+      std::vector<geometry_msgs::Pose> waypoints;
+      while(getline(inFile,str_pose_base))//是否到达文件末尾
+      {                  
+          if(str_pose_base != "NEXT")
           {
                 //将一行字符串转换到字符串流
                 stringstream stream_pose(str_pose_base);
@@ -113,14 +122,18 @@ int main(int argc, char *argv[])
 
                 waypoints.push_back(target_pose);
           }
-          auboControl.runWayPoints(waypoints);
-          //创建一个临时容器，清空waypoints
-          std::vector<geometry_msgs::Pose>().swap(waypoints);//当此语句执行完成时，临时容器销毁
+          else
+          {
+            std::cout<<waypoints[0].position.x<<std::endl;
+            std::cout<<waypoints[1].position.x<<std::endl;
+            auboControl.setMaxVelAndAccScalingFactor(0.1,1.0);
+            auboControl.runWayPoints(waypoints);
+            //创建一个临时容器，清空waypoints
+            std::vector<geometry_msgs::Pose>().swap(waypoints);//当此语句执行完成时，临时容器销毁
+          }
       }
 
       inFile.close();
 
-  // END_MAIN_NODE
-  ros::shutdown();
   return 0;
 }

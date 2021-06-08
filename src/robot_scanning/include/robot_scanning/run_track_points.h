@@ -18,10 +18,11 @@ public:
     void initMoveit();
     void setMaxVelAndAccScalingFactor(double vel_factor,double acc_factor);
     void gotoTargetByJoint(std::vector<double> &joints);
-    void gotoTargetByPose(double pose[]);
+    void gotoTargetByPose(geometry_msgs::Pose target_pose);
     void visualBlocking(std::string message);
     void runWayPoints(std::vector<geometry_msgs::Pose> &waypoints);
     Eigen::Matrix4d getTransMatrix();
+    void stop();
 
 
 private:

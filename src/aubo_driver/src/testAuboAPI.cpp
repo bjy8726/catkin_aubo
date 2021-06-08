@@ -40,11 +40,13 @@
 #include <sstream>
 #include <fstream>
 
-using namespace aubo_driver;
 
-#define MAX_JOINT_ACC 50.0/180.0*M_PI  //unit rad/s^2
-#define MAX_JOINT_VEL 5.0/180.0*M_PI   //unit rad/s
-#define MAX_END_ACC    0.2                // unit m/s^2    4
+using namespace aubo_driver;
+using namespace std;
+
+#define MAX_JOINT_ACC 60.0/180.0*M_PI  //unit rad/s^2
+#define MAX_JOINT_VEL 3.0/180.0*M_PI   //unit rad/s
+#define MAX_END_ACC    0.5                // unit m/s^2    4
 #define MAX_END_VEL    0.2                // unit m/s
 
 double zero_poeition[ARM_DOF] = {0};
@@ -132,8 +134,6 @@ void testTrackMove(AuboDriver &robot_driver)
     robot_driver.robot_send_service_.robotServiceSetGlobalMoveJointMaxVelc(jointMaxVelc);
 
 
-
-    
     //robot_driver.robot_send_service_.robotServiceSetGlobalBlendRadius(0.03);
     robot_driver.robot_send_service_.robotServiceClearGlobalWayPointVector();
 
@@ -141,62 +141,89 @@ void testTrackMove(AuboDriver &robot_driver)
     /** 先给定一系列位姿点,并生成位姿点容器wayPointVector **/
     double startPointJointAngle[ARM_DOF] = {0};
     initJointAngleArray(startPointJointAngle, 0.0/180.0*M_PI,  0.0/180.0*M_PI,  0.0/180.0*M_PI, 0.0/180.0*M_PI, 0.0/180.0*M_PI,0.0/180.0*M_PI);
-    int nums = 30;
+
+    /*
     for(int i=0; i<nums; i++)
     {
-        aubo_robot_namespace::wayPoint_S wayPoint;
+        aubo_robot_namespace::wayPoint_S wayPoint;      
         
-        
-        wayPoint.jointpos[0] = 0+i*0.02;
-        wayPoint.jointpos[1] = 0+i*0.02;
-        wayPoint.jointpos[2] = 0+i*0.02;
-        wayPoint.jointpos[3] = 0+i*0.02;
-        wayPoint.jointpos[4] = 0+i*0.02;
-        wayPoint.jointpos[5] = 0+i*0.02;
+        wayPoint.jointpos[0] = 0+i*0.002;
+        wayPoint.jointpos[1] = 0+i*0.002;
+        wayPoint.jointpos[2] = 0+i*0.002;
+        wayPoint.jointpos[3] = 0+i*0.002;
+        wayPoint.jointpos[4] = 0+i*0.002;
+        wayPoint.jointpos[5] = 0+i*0.002;
         wayPointVector.push_back(wayPoint);
         robot_driver.robot_send_service_.robotServiceAddGlobalWayPoint(wayPoint);
+        */
         
-        /*
-        wayPoint.cartPos.position.x = 0.4+0.01*i;
-        wayPoint.cartPos.position.y = -0.06;
-        wayPoint.cartPos.position.z = 0.35;
-        wayPoint.orientation.w = 1;
-        wayPoint.orientation.x = 0;
-        wayPoint.orientation.y = 0;
-        wayPoint.orientation.z = 0; 
-        //求逆解，然后发出去,尝试以下不求逆解，将
-        int ret = robot_driver.robot_send_service_.robotServiceRobotIk(startPointJointAngle,
-                             wayPoint.cartPos.position,wayPoint.orientation,wayPoint);
-        if(ret == aubo_robot_namespace::InterfaceCallSuccCode)
-        {
-            wayPointVector.push_back(wayPoint);
-            robot_driver.robot_send_service_.robotServiceAddGlobalWayPoint(wayPoint);
-            std::cout<<":"<<wayPointVector.at(i).cartPos.position.x<<std::endl;
+
+
+      fstream inFile;
+      inFile.open("/home/bianjingyang/catkin_aubo/src/text_base.txt",ios::in);
+      if(!inFile)
+      {
+          std::cout<<"open text_base failed!"<<std::endl;
+          return ;
+      }
+      int count = 0;
+      std::string str_pose_base;
+      while( getline(inFile,str_pose_base))//是否到达文件末尾
+      {   
+          if(str_pose_base != "NEXT")
+          {
+                aubo_robot_namespace::wayPoint_S wayPoint;
+                //将一行字符串转换到字符串流
+                std::stringstream stream_pose(str_pose_base);
+                stream_pose >> wayPoint.cartPos.position.x;
+                stream_pose >> wayPoint.cartPos.position.y;
+                stream_pose >> wayPoint.cartPos.position.z;
+                stream_pose >> wayPoint.orientation.x;
+                stream_pose >> wayPoint.orientation.y;
+                stream_pose >> wayPoint.orientation.z;
+                stream_pose >> wayPoint.orientation.w;
+
+
+                //求逆解，然后发出去,尝试以下不求逆解，将
+                int ret = robot_driver.robot_send_service_.robotServiceRobotIk(startPointJointAngle,
+                                        wayPoint.cartPos.position,wayPoint.orientation,wayPoint);
+                if(ret == aubo_robot_namespace::InterfaceCallSuccCode)
+                {
+                    wayPointVector.push_back(wayPoint);
+                    robot_driver.robot_send_service_.robotServiceAddGlobalWayPoint(wayPoint);
+                    //std::cout<<":"<<wayPointVector.at(i).cartPos.position.x<<std::endl;
+                }
+                else
+                {
+                    std::cerr<<"调用逆解函数失败"<<std::endl;
+                }     
+                count++;         
         }
         else
         {
-            std::cerr<<"调用逆解函数失败"<<std::endl;
-        }*/
-    }
-    std::cout<<"points:"<<wayPointVector.size()<<std::endl;
-    std::cout<<":"<<wayPointVector.at(2).cartPos.position.x<<std::endl;
-    
-
-
-    /** 移动到机器人轨迹的初始点 **/
-
-    for(int i=0; i<nums; i++)
-{
-        int ret = robot_driver.robot_send_service_.robotServiceJointMove(wayPointVector[i].jointpos, true);
-        if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
-            ROS_ERROR("Failed to move to zero postions, error code:%d", ret);
-}
-        
-    /*
-    int ret3 = robot_driver.robot_send_service_.robotServiceTrackMove(aubo_robot_namespace::CARTESIAN_UBSPLINEINTP,true);
-    if(ret3 != aubo_robot_namespace::InterfaceCallSuccCode)
-        ROS_ERROR("error3 code:%d", ret3);*/
-
+            std::cout<<count<<std::endl;
+            count = 0;
+            //移动到每行轨迹的初始点
+            int ret = robot_driver.robot_send_service_.robotServiceJointMove(wayPointVector[0].jointpos, true);
+            if(ret != aubo_robot_namespace::InterfaceCallSuccCode)
+            {
+                ROS_ERROR("Failed to move to zero postions, error code:%d", ret);
+                break;
+            }
+            int ret3 = robot_driver.robot_send_service_.robotServiceTrackMove(aubo_robot_namespace::JOINT_UBSPLINEINTP,true);
+            if(ret3 != aubo_robot_namespace::InterfaceCallSuccCode)
+            {
+                ROS_ERROR("Failed to track move ,error3 code:%d", ret3);
+                robot_driver.robot_send_service_.rootServiceRobotMoveControl(aubo_robot_namespace::RobotMoveStop);
+                break;
+            }
+            //执行完成之后需要清除轨迹点
+            robot_driver.robot_send_service_.robotServiceClearGlobalWayPointVector();
+            //创建一个临时容器，清空waypoints
+            std::vector<aubo_robot_namespace::wayPoint_S>().swap(wayPointVector);//当此语句执行完成时，临时容器销毁
+        }
+      }
+      inFile.close();
 }
 
 
