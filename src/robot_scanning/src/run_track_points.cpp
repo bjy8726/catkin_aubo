@@ -47,14 +47,12 @@ void RunTrackPoints::initMoveit()
   ROS_INFO_NAMED("scanning", "End effector link: %s", move_group->getEndEffectorLink().c_str());
 }
 
-
 void RunTrackPoints::setMaxVelAndAccScalingFactor(double vel_factor,double acc_factor)
 {
   //Reduce the speed of the robot arm by the scaling factor of the maximum speed of each joint. Please note that this is not the speed of the final effector.
   move_group->setMaxVelocityScalingFactor(vel_factor); //0.03
   move_group->setMaxAccelerationScalingFactor(acc_factor); //0.1
 }
-
 
 void RunTrackPoints::gotoTargetByJoint(std::vector<double> &joints)
 {

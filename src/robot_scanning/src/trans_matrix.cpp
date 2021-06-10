@@ -37,6 +37,43 @@ Eigen::Matrix4d TransMatrix::getTransMatrix(Eigen::Vector3d &T,Eigen::Quaternion
   return trans_matrix;
 }
 
+//函数重载：提供不同的接口
+Eigen::Matrix4d TransMatrix::getTransMatrix(std::vector<double> &posture)
+{
+  Eigen::Vector3d T;
+  Eigen::Quaterniond Q;
+  T[0] = posture[0];
+  T[1] = posture[1];
+  T[2] = posture[2];
+  Q.x() = posture[3];
+  Q.y() = posture[4];
+  Q.z() = posture[5];
+  Q.w() = posture[6];
+    
+  Eigen::Matrix4d trans_matrix;
+  Eigen::Matrix3d qua_matrix;
+  qua_matrix = Q.matrix();
+  //平移矩阵
+  trans_matrix(0,3) = T[0];
+  trans_matrix(1,3) = T[1];
+  trans_matrix(2,3) = T[2];
+  // 旋转矩阵
+  for(int i=0;i<3;i++)
+  {
+    for(int j=0;j<3;j++)
+    {
+      trans_matrix(i,j) = qua_matrix(i,j);
+    }
+  }
+  //齐次坐标
+  trans_matrix(3,0) = 0;
+  trans_matrix(3,1) = 0;
+  trans_matrix(3,2) = 0;
+  trans_matrix(3,3) = 1;
+
+  return trans_matrix;
+}
+
 void TransMatrix::writeTrackPoints2File(Eigen::Matrix4d &TrackPoints_obj,fstream &outFile_obj)
 {
   //输入x y z
@@ -119,3 +156,26 @@ void TransMatrix::newTrackPointsFileByTransMatrix(std::string &text_init,std::st
       inFile_init.close();
       outFile_target.close();
 }
+
+
+void TransMatrix::printfMatrix4d(Eigen::Matrix4d &T,const std::string &matrixName)
+{
+      std::cout<<matrixName<<" :"<<std::endl;
+      std::cout<<T(0,0)<<" ";
+      std::cout<<T(0,1)<<" ";
+      std::cout<<T(0,2)<<" ";
+      std::cout<<T(0,3)<<std::endl;
+      std::cout<<T(1,0)<<" ";
+      std::cout<<T(1,1)<<" ";  
+      std::cout<<T(1,2)<<" ";    
+      std::cout<<T(1,3)<<std::endl;
+      std::cout<<T(2,0)<<" ";
+      std::cout<<T(2,1)<<" ";
+      std::cout<<T(2,2)<<" ";
+      std::cout<<T(2,3)<<std::endl;
+      std::cout<<T(3,0)<<" ";
+      std::cout<<T(3,1)<<" ";
+      std::cout<<T(3,2)<<" ";
+      std::cout<<T(3,3)<<std::endl;
+}
+

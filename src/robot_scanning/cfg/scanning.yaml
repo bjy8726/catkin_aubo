@@ -2,10 +2,23 @@
 joints_angle:
    home_joints: [-0.001255,0.0,-1.406503,0.0,-1.571295,-0.002450]
 
+#将相机坐标系下的目标点文件转换到工件坐标系
 scaning_files:
    text_cam: "/home/bianjingyang/catkin_realsense/src/io_files/pose_points_file.txt"
-   text_obj: "/home/bianjingyang/catkin_aubo/src/text_obj.txt"
-   text_base: "/home/bianjingyang/catkin_aubo/src/text_base.txt"
+   text_obj: "/home/bianjingyang/catkin_aubo/src/robot_scanning/text_obj.txt"
+   text_base: "/home/bianjingyang/catkin_aubo/src/robot_scanning/text_base.txt"
 
-scanning_motion:
-   points_num_per_time: 200
+#工具坐标系到末端坐标系的位姿关系(以工具坐标系为基准)
+scanning_tool:
+   tool_offset_x: 0
+   tool_offset_y: 0
+   tool_offset_z: -0.1  #负数，表示减去工具的偏移量
+
+#机械臂末端到相机坐标系的位姿关系(以末端坐标系为基准)[X,Y,Z,x,y,z,w]
+scanning_camera:
+   camera_posture: [-0.0325,-0.065,0.00084,0,0,0,1]
+   
+   
+
+
+  
