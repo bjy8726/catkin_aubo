@@ -1,7 +1,6 @@
 #设置一些特殊点的位置
 joints_angle:
-   home_joints: [-0.001255,0.0,-1.406503,0.0,-1.571295,-0.002450]
-
+   home_joints: [0.0,0.0,-1.571295,0.0,-1.571295,0.0]  #对应的xyz:-0.4785 -0.1214 0.4358
 #将相机坐标系下的目标点文件转换到工件坐标系
 scaning_files:
    text_cam: "/home/bianjingyang/catkin_realsense/src/io_files/pose_points_file.txt"

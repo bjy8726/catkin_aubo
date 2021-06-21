@@ -54,13 +54,18 @@ int main(int argc, char *argv[])
   signal(SIGINT,mySigHandle);
 
   //0.创建机械臂的moveit接口，并运动到指定位置
-      
       auboControl.initMoveit();
       auboControl.setMaxVelAndAccScalingFactor(1.0,1.0);
-      auboControl.visualBlocking("Press 'next'1 in the RvizVisualToolsGui window to go to the pose");
+//step1:
+      auboControl.visualBlocking("Press 'next'1 in the RvizVisualToolsGui window to go to the init pose");
       auboControl.gotoTargetByJoint(home_joints);
 
-  
+//step2:
+      //auboControl.visualBlocking("Press 'next'2 in the RvizVisualToolsGui window to get points cloud");
+ 
+
+//step3: 
+    auboControl.visualBlocking("Press 'next'3 in the RvizVisualToolsGui window to get path");
   //1.调用定位模块：确定相机坐标系与工件坐标系的关系(该模块封装成类)
       //1.1现在实验相机获取点云到执行轨迹这段时间，工件和相机不发生相对移动，可认为相机坐标系与工件坐标系重合
       Eigen::Matrix4d T_obj2cam;
@@ -125,9 +130,10 @@ int main(int argc, char *argv[])
 
       T_base2obj = T_base2end*T_tool*T_end2cam*T_cam2obj;
       trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_base,T_base2obj);//获得末端法兰轨迹
-      
+
+//step4:      
       //4.2执行路径点
-      auboControl.visualBlocking("Press 'next'2 in the RvizVisualToolsGui window to start scanning");          
+      auboControl.visualBlocking("Press 'next'4 in the RvizVisualToolsGui window to start scanning");          
       fstream inFile;
       inFile.open(text_base,ios::in);
       if(!inFile)
