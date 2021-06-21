@@ -88,6 +88,29 @@
 
 3. 规划多个点生成的路径执行时速度怎么控制
 
+--------
+整体扫查流程测试：
+1. 开启机械臂的moveit控制
+    roslaunch aubo_i5_moveit_config moveit_planning_execution.launch sim:=false robot_ip:=192.168.1.10
+
+    运行到初始点(拍照位置)
+    roslaunch robot_scanning run_track_points_moveit.launch
+
+    启动相机
+    roslaunch realsense2_camera rs_rgbd.launch
+
+    获取点云并预处理
+    roslaunch pointcloud_preprocess pre_process.launch
+
+    #拔掉网线进行仿真
+
+    重建并进行路径规划
+    roslaunch surface_reconstruction reconstruction_and_dispersion.launch
+
+    点击next执行点
+
+
+
 
 
 
