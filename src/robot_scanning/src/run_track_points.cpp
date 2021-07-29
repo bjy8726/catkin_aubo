@@ -106,12 +106,23 @@ void RunTrackPoints::runWayPoints(std::vector<geometry_msgs::Pose> &waypoints)
   moveit_msgs::RobotTrajectory trajectory;
   const double jump_threshold = 0.0;           //(The jump threshold is set to 0.0)
   //影响轨迹运动效果
-  const double eef_step = 0.01;                //(interpolation step)
+  const double eef_step = 0.01;                //(interpolation step  m)
+  //move_group->setGoalTolerance(0.01);
 
   // Calculate Cartesian interpolation path: return path score (0~1, -1 stands for error)
-  double fraction = move_group->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
-  ROS_INFO_NAMED("tutorial", "Visualizing plan  (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+  double fraction = 0.0;
+  int maxtries = 300;
+  int attempts = 0;
+  while(fraction<1.0&&attempts<maxtries){
+    fraction = move_group->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+    attempts++;
 
+    if(attempts%10==0){
+      ROS_INFO("Cartesian path : %.2f%%, trying next compute!\n", fraction * 100.0);
+    }
+  }
+  
+ 
 
   // Visualize the plan in RViz
   namespace rvt = rviz_visual_tools;
@@ -124,6 +135,7 @@ void RunTrackPoints::runWayPoints(std::vector<geometry_msgs::Pose> &waypoints)
   }
   visual_tools->trigger();
 
+  ROS_INFO("Finally Cartesian path is: %.2f%%!\n", fraction * 100.0);
   my_plan.trajectory_= trajectory;
   move_group->execute(my_plan);
 }

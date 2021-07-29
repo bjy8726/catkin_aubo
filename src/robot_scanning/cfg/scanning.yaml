@@ -1,11 +1,15 @@
 #设置一些特殊点的位置
 joints_angle:
    home_joints: [0.0,0.0,-1.571295,0.0,-1.571295,0.0]  #对应的xyz:-0.4785 -0.1214 0.4358
+   #home_joints: [0.0,0.0,-1.571295,0.0,-1.571295,0.0]  #对应的xyz:-0.4785 -0.1214 0.4358
 #将相机坐标系下的目标点文件转换到工件坐标系
 scaning_files:
-   text_cam: "/home/bianjingyang/catkin_realsense/src/io_files/pose_points_file.txt"
-   text_obj: "/home/bianjingyang/catkin_aubo/src/robot_scanning/text_obj.txt"
-   text_base: "/home/bianjingyang/catkin_aubo/src/robot_scanning/text_base.txt"
+   #需要输入的路径点文件
+   text_cam: "/home/bianjingyang/catkin_realsense/src/io_files/pose_points_surface1.txt"
+   #输出的中间文件
+   text_obj: "/home/bianjingyang/catkin_aubo/src/robot_scanning/io_files/text_obj.txt"
+   #输出的最终文件
+   text_base: "/home/bianjingyang/catkin_aubo/src/robot_scanning/io_files/text_base.txt"
 
 #工具坐标系到末端坐标系的位姿关系(以工具坐标系为基准)
 scanning_tool:
@@ -15,7 +19,7 @@ scanning_tool:
 
 #机械臂末端到相机坐标系的位姿关系(以末端坐标系为基准)[X,Y,Z,x,y,z,w]
 scanning_camera:
-   camera_posture: [-0.0325,-0.065,0.00084,0,0,0,1]
+   camera_posture: [-0.0325,-0.065,0.00084,0,0,0,1]  #x=-0.0325 y=-0.065
    
    
 

@@ -158,6 +158,77 @@ void TransMatrix::newTrackPointsFileByTransMatrix(std::string &text_init,std::st
 }
 
 
+//已知原始坐标系到目标坐标的变换矩阵/原始坐标系下的轨迹点，将原始坐标系下的轨迹点文件转换到目标坐标系
+  /*
+  input:text_init(init坐标系的轨迹点文本)
+  output:text_target(target坐标系的轨迹点文本)
+  input: init坐标系到target坐标系的变换矩阵
+
+  TrackPoints_target = T_target2init*TrackPoints_init;
+  */
+void TransMatrix::newTrackPointsFileByTransMatrix(std::string &text_init,std::string &text_target,
+                                                    Eigen::Matrix4d &T_base2end, Eigen::Matrix4d &T_tool,
+                                                    Eigen::Matrix4d &T_end2cam,  Eigen::Matrix4d &T_cam2obj)
+{
+
+      fstream inFile_init;
+      inFile_init.open(text_init,ios::in);
+      if(!inFile_init)
+      {
+          std::cout<<"open text_init failed!"<<std::endl;
+          return;
+      }
+      fstream outFile_target;
+      outFile_target.open(text_target,ios::out|ios::trunc);
+      if(!outFile_target)
+      {
+          std::cout<<"open text_target failed!"<<std::endl;
+          return;
+      }
+      string str_pose_init;
+      Eigen::Quaterniond Q;
+      //轨迹点用一个坐标系来表示，由旋转矩阵和平移矩阵组成，给出以当前点为原点的坐标系姿态
+      Eigen::Matrix4d TrackPoints_init;
+      Eigen::Matrix4d TrackPoints_end;
+      Eigen::Matrix4d TrackPoints_target;
+      Eigen::Vector3d T;
+      while(getline(inFile_init,str_pose_init))//是否到达文件末尾
+      {
+          //getline(inFile_init,str_pose_init);   
+          if(str_pose_init == "NEXT")
+          {
+            outFile_target<<"NEXT"<<std::endl;
+            continue; 
+          }
+
+          stringstream stream_pose(str_pose_init);
+          //x y z
+          stream_pose >> T[0];
+          stream_pose >> T[1];
+          stream_pose >> T[2];
+          //四元数
+          stream_pose >> Q.x();
+          stream_pose >> Q.y();
+          stream_pose >> Q.z();
+          stream_pose >> Q.w();
+          TrackPoints_init = getTransMatrix(T,Q);    
+
+          //末端坐标系下的点
+          TrackPoints_end = T_end2cam*T_cam2obj*TrackPoints_init;
+          //因为机械臂末端有工具，还要去掉工具的尺寸，这个偏移量实在目标点坐标系下的大小，需要转换为末端坐标系下的
+          TrackPoints_end = TrackPoints_end * T_tool;
+
+          TrackPoints_target = T_base2end*TrackPoints_end;
+
+
+          //将text_init坐标系下的位姿点写入文件text_target
+          writeTrackPoints2File(TrackPoints_target,outFile_target);
+      }
+      inFile_init.close();
+      outFile_target.close();
+}
+
+
 void TransMatrix::printfMatrix4d(Eigen::Matrix4d &T,const std::string &matrixName)
 {
       std::cout<<matrixName<<" :"<<std::endl;

@@ -11,8 +11,8 @@ RunTrackPoints auboControl;
 
 void mySigHandle(int sig)
 {
-    ROS_ERROR("STOP");
-    auboControl.stop();
+    //ROS_ERROR("STOP");
+    //auboControl.stop();
     ros::shutdown();
 }
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
  
 
 //step3: 
-    auboControl.visualBlocking("Press 'next'3 in the RvizVisualToolsGui window to get path");
+      auboControl.visualBlocking("Press 'next'3 in the RvizVisualToolsGui window to get path");
   //1.调用定位模块：确定相机坐标系与工件坐标系的关系(该模块封装成类)
       //1.1现在实验相机获取点云到执行轨迹这段时间，工件和相机不发生相对移动，可认为相机坐标系与工件坐标系重合
       Eigen::Matrix4d T_obj2cam;
@@ -120,16 +120,16 @@ int main(int argc, char *argv[])
       T_base2end = auboControl.getTransMatrix();
 
       //4.1.4将工件坐标系下的目标点转换到基座标系下的目标点，然后在减去超声扫查装置的尺寸，最后转成基座标系下末端法兰的位姿
-            /*
-            1.将工件坐标系下的目标点转换到机械臂末端坐标系：Trackpoints_end = T_end2obj * Trackpoints_obj
-            2.末端坐标系下的目标点还需要减去工具相对机械臂末端的偏移量：Trackpoints_end_trans = T_tool * Trackpoints_end
-            3.末端坐标系下的目标点减去偏移量之后在转换到基坐标系：Trackpoints_base = T_base2end * Trackpoints_end_trans
-            4.最终生成的时机械臂末端法兰在基座坐标系下的一系列位姿,可直接用于控制
-                Trackpoints_base = T_base2end*T_tool*T_end2cam*T_cam2obj*Trackpoints_end
-            */
-
-      T_base2obj = T_base2end*T_tool*T_end2cam*T_cam2obj;
-      trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_base,T_base2obj);//获得末端法兰轨迹
+    
+            
+      //目前工件坐标系认为是相机坐标系的原点
+      trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_base,
+                                            T_base2end,T_tool,T_end2cam,T_cam2obj);//去除刀具的偏移量获得末端法兰轨迹
+    
+      //用于观察不去除工具偏移量的坐标点，用于比较
+      std::string text_demo = "/home/bianjingyang/catkin_aubo/src/robot_scanning/io_files/text_demo.txt";
+      Eigen::Matrix4d T = T_base2end*T_end2cam*T_cam2obj;
+      trackPointsTransMatrix.newTrackPointsFileByTransMatrix(text_obj,text_demo,T);
 
 //step4:      
       //4.2执行路径点
@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
       }
       string str_pose_base;
       std::vector<geometry_msgs::Pose> waypoints;
+      bool isFirstPose = true;
       while(getline(inFile,str_pose_base))//是否到达文件末尾
       {                  
           if(str_pose_base != "NEXT")
@@ -162,9 +163,15 @@ int main(int argc, char *argv[])
           }
           else
           {
-            std::cout<<waypoints[0].position.x<<std::endl;
-            std::cout<<waypoints[1].position.x<<std::endl;
+            //std::cout<<waypoints[0].position.x<<std::endl;
+            //std::cout<<waypoints[1].position.x<<std::endl;
             auboControl.setMaxVelAndAccScalingFactor(0.1,1.0);
+            //为避免与工件碰撞，执行所有轨迹之前，先到达第一个路径点的上方，z轴上面的10cm左右（认为设定）
+
+            ROS_INFO("run a path\n");   
+            ROS_INFO("the first point in the path:%f,%f,%f\n",waypoints[0].position.x,
+                                                            waypoints[0].position.y,
+                                                            waypoints[0].position.z);  
             auboControl.runWayPoints(waypoints);
             //创建一个临时容器，清空waypoints
             std::vector<geometry_msgs::Pose>().swap(waypoints);//当此语句执行完成时，临时容器销毁
@@ -172,6 +179,8 @@ int main(int argc, char *argv[])
       }
 
       inFile.close();
+
+      auboControl.gotoTargetByJoint(home_joints);
 
   return 0;
 }
